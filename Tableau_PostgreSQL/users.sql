@@ -1,3 +1,46 @@
+--User Details with Last Login
+SELECT 
+    u.name AS username,
+    u.email,
+    u.role,
+    u.last_login,
+    s.name AS site_name
+FROM users u
+JOIN sites s ON u.site_id = s.id
+WHERE u.system_user_id IS NOT NULL
+ORDER BY u.last_login DESC;
+
+--Role-wise User Distribution
+SELECT 
+    u.role,
+    COUNT(*) AS role_count
+FROM users u
+WHERE u.system_user_id IS NOT NULL
+GROUP BY u.role
+ORDER BY role_count DESC;
+
+--Active vs Inactive Users
+SELECT 
+    CASE 
+        WHEN u.last_login >= CURRENT_DATE - INTERVAL '30 days' THEN 'Active (<=30 days)'
+        WHEN u.last_login >= CURRENT_DATE - INTERVAL '90 days' THEN 'Semi-active (31-90 days)'
+        ELSE 'Inactive (>90 days)'
+    END AS activity_status,
+    COUNT(*) AS user_count
+FROM users u
+WHERE u.system_user_id IS NOT NULL
+GROUP BY activity_status;
+
+--Users by Site
+SELECT 
+    s.name AS site_name,
+    COUNT(u.id) AS user_count
+FROM users u
+JOIN sites s ON u.site_id = s.id
+WHERE u.system_user_id IS NOT NULL
+GROUP BY s.name
+ORDER BY user_count DESC;
+
 /* 
     Server users. 
 */
