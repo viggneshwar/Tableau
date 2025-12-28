@@ -1,70 +1,56 @@
-/*  
+--List All Workbooks
+SELECT 
+    w.id AS workbook_id,
+    w.name AS workbook_name,
+    w.project_id,
+    p.name AS project_name,
+    w.owner_id,
+    u.name AS owner_name,
+    w.created_at,
+    w.updated_at
+FROM workbooks w
+JOIN projects p ON w.project_id = p.id
+JOIN users u ON w.owner_id = u.id
+ORDER BY w.name;
 
-Author: Jared Duquette 
-            @DigitalDuquette
-            GitHub.com/DigitalDuquette
-            DigitalDuquette.com 
-Consuming Platform: Tableau
-Created on: MM-DD-YY
+--Workbook Usage (Views)
+SELECT 
+    w.name AS workbook_name,
+    COUNT(v.id) AS view_count
+FROM workbooks w
+JOIN views v ON w.id = v.workbook_id
+GROUP BY w.name
+ORDER BY view_count DESC;
 
-Purpose:
-    Workbook data from server. 
-
-    Each record in workbooks is one workbook on server.
-
-*****Change Log*****
-
-Last Update        Name             Change Summary
-MM-DD-YY           DUQ               summaryHere
-
+--Workbooks by Project
+SELECT 
+    p.name AS project_name,
+    COUNT(w.id) AS workbook_count
+FROM workbooks w
+JOIN projects p ON w.project_id = p.id
+GROUP BY p.name
+ORDER BY workbook_count DESC;
 
 
-*/ 
-
+--Recently Updated Workbooks
 
 SELECT 
-    wkbk.description AS WorkbookDetails_about, 
-    (CASE 
-        /* PURPOSE:
-        Checks About section for more text than the template expected: 
+    w.name AS workbook_name,
+    u.name AS owner_name,
+    w.updated_at
+FROM workbooks w
+JOIN users u ON w.owner_id = u.id
+WHERE w.updated_at >= CURRENT_DATE - INTERVAL '30 days'
+ORDER BY w.updated_at DESC;
 
-            *Process Owner*: 
-            *Functional Expert*: 
-            *Technical Expert*: 
-        */  
-        WHEN 
-        ( 
-            length(wkbk.description) > 59 
-            AND 
-            (
-                wkbk.description LIKE '%Process Owner%'
-                AND wkbk.description LIKE '%Functional Expert%' 
-                AND wkbk.description LIKE '%Technical Expert%' 
-            )
-        ) THEN 'true'
-        ELSE 'false'
-    END)::BOOLEAN AS "Contains About Section",  
-    wkbk.id AS WorkbookID, 
-    wkbk.name AS WorkbookName, 
-    wkbk.repository_url AS WorkbookViewURL,
-        /* PURPOSE 
-            Use in servername.com/#/views/[WorkbookViewURL]
-        */
-    wkbk.created_at AT TIME ZONE 'EST' AS "Created (EST)",
-    wkbk.first_published_at AT TIME ZONE 'EST' AS "First Published (EST)", 
-    wkbk.updated_at AT TIME ZONE 'EST' AS "Updated (EST)", 
-    wkbk.view_count AS WorkbookViewCount,
-    
-    wkbk.lock_version, 
-    wkbk.revision, 
-    wkbk.document_version, 
-    -- TODO: add joins to lookup names
-    wkbk.owner_id, 
-    wkbk.project_id, 
-    prj.name AS "Project Name"
-    
-    -- prj.* 
-    -- wkbk.*
-FROM workbooks AS wkbk 
-    /* Each record == one workbook on server */
-    INNER JOIN projects AS prj ON ( wkbk.project_id = prj.id )
+--Workbook Permissions
+SELECT 
+    w.name AS workbook_name,
+    u.name AS user_name,
+    cap.capability_name,
+    cap.allowed
+FROM workbooks w
+JOIN permissions perms ON w.id = perms.workbook_id
+JOIN users u ON perms.grantee_id = u.id
+JOIN capabilities cap ON perms.capability_id = cap.id
+ORDER BY w.name, u.name;
