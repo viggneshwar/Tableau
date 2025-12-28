@@ -1,3 +1,5 @@
+#This gives you a direct comparison: how often the data source is refreshed vs how often the workbook is actually used.
+
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
